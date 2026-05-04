@@ -1,7 +1,7 @@
 # Infrastructure - EC2 Provisioning & Hardening
-This document details the provisioning and hardeing of the EC2 infrastructure and operating system layer (Amazon Linux 2023) before installing the LAMP Stack and WordPress
-
+This document details the provisioning and hardeing of the EC2 infrastructure and operating system layer (Amazon Linux 2023) before installing the LAMP Stack and WordPress. 
 Emphasis is placed on **least privilege**, attack surface reduction, and defence-in-depth.
+
 ---
 
 ## 1. Launch EC2 Instance
