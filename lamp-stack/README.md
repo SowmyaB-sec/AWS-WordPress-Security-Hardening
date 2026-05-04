@@ -30,4 +30,77 @@ The stack is installed in this order (Apache → MySQL → PHP) to make troubles
 sudo dnf install httpd -y
 sudo systemctl enable --now httpd
 sudo systemctl status httpd
+```
+### Confirm Apache is Responding
+
+```bash
+# From the instance itself
+curl -I http://localhost
+
+# From your local machine — should return the Apache test page
+curl -I http://YOUR_ELASTIC_IP
+```
+### Set Correct Ownership of the Web Root
+
+```bash
+sudo chown -R ec2-user:apache /var/www/html
+sudo chmod 2775 /var/www/html
+find /var/www/html -type d -exec sudo chmod 2775 {} \;
+find /var/www/html -type f -exec sudo chmod 0664 {} \;
+```
+
+## 2. Apache Hardening
+
+All Apache configuration on Amazon Linux 2023 lives under `/etc/httpd/`. The main
+configuration file is `/etc/httpd/conf/httpd.conf`. Additional configuration files
+are loaded from `/etc/httpd/conf.d/`.
+
+Create a dedicated security configuration file(so that hardening settings are kept separate and are easy to audit)
+
+```bash
+sudo nano /etc/httpd/conf.d/security.conf
+```
+
+```apache
+# ── Server information hiding ─────────────────────────────────────────
+# Hide Apache version number and OS from all HTTP response headers
+ServerTokens Prod
+ServerSignature Off
+
+# Prevent PHP version disclosure via X-Powered-By header
+# (Also set in php.ini — belt and braces)
+Header always unset X-Powered-By
+
+# ── Directory security ───────────────────────────────────────────────────────
+# Disable directory listing globally — no browsing of directories
+# without an index file
+<Directory "/var/www/html">
+    Options -Indexes -Includes
+    AllowOverride All
+    Require all granted
+</Directory>
+
+# ── HTTP security headers ───────────────────────────────────────────────────
+# Force HTTPS for 1 year, include subdomains, allow browser preload
+Header always set Strict-Transport-Security \
+    "max-age=31536000; includeSubDomains; preload"
+
+# Prevent the page being loaded in an iframe on another origin (clickjacking)
+Header always set X-Frame-Options "SAMEORIGIN"
+
+# Prevent MIME type sniffing
+Header always set X-Content-Type-Options "nosniff"
+
+# Enable browser XSS filter and block the page on detection
+Header always set X-XSS-Protection "1; mode=block"
+
+# Control how much referrer information is sent with requests
+Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+# Restrict access to browser features — camera, microphone, geolocation
+Header always set Permissions-Policy \
+    "geolocation=(), microphone=(), camera=(), payment=(), usb=()"
+
+
+
 
