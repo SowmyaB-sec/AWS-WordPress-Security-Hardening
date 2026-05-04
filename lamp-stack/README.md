@@ -68,7 +68,7 @@ ServerTokens Prod
 ServerSignature Off
 
 # Prevent PHP version disclosure via X-Powered-By header
-# (Also set in php.ini — belt and braces)
+# (Also set in php.ini - belt and braces)
 Header always unset X-Powered-By
 
 # ── Directory security ───────────────────────────────────────────────────────
@@ -101,6 +101,41 @@ Header always set Referrer-Policy "strict-origin-when-cross-origin"
 Header always set Permissions-Policy \
     "geolocation=(), microphone=(), camera=(), payment=(), usb=()"
 
+
+# Content Security Policy — restrict resource loading to own origin by default
+# Adjust script-src and style-src if you use external CDNs
+Header always set Content-Security-Policy \
+    "default-src 'self'; \
+     script-src 'self' 'unsafe-inline'; \
+     style-src 'self' 'unsafe-inline'; \
+     img-src 'self' data: https:; \
+     font-src 'self'; \
+     connect-src 'self'; \
+     frame-ancestors 'self';"
+
+# ── Request method restrictions/ Restrict dangerous HTTP methods ─────────────────────────────────────────────
+# Only allow GET, POST, HEAD — disable TRACE, PUT, DELETE, OPTIONS
+<LimitExcept GET POST HEAD>
+    Require all denied
+</LimitExcept>
+
+# ── Protect Sensitive files ────────────────────────────────────────────────
+# Block access to backup files, config files, logs, and other
+# sensitive file types at the web server level
+<FilesMatch "(^#.*#|\.(bak|conf|dist|fla|inc|ini|log|psd|sh|sql|sw[op])|~)$">
+    Require all denied
+</FilesMatch>
+
+# Block access to .htaccess and .htpasswd files themselves
+<Files ".ht*">
+    Require all denied
+</Files>
+
+# ── Timeout settings/ Connection hardening ─────────────────────────────────────────────────────────
+# Limit slow loris and connection-hold attacks
+Timeout 60
+KeepAliveTimeout 5
+MaxKeepAliveRequests 100
 
 
 
