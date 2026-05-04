@@ -16,8 +16,31 @@ Emphasis is placed on **least privilege**, attack surface reduction, and defence
 **Best Practice**: Use a dedicated VPC and public subnet for this project. Avoid using the default VPC in production-like setups.
 ### Launch via AWS Console or CLI
 
-(Keep your existing detailed steps — they are good. Consider adding a note about enabling **IMDSv2** under Advanced Details for better security.)
+1. Navigate to **EC2 → Launch Instance**
+2. Name the instance: `lamp-wordpress-secure`
+3. Select **Amazon Linux 2023 AMI**
+4. Choose instance type (`t2.micro` for free tier)
+5. Under **Key pair**, select an existing key pair or create a new one — download the `.pem` file and store it securely
+6. Under **Network settings**, select your VPC and a public subnet
+7. Configure Security Group (see Section 2)
+8. Under **Advanced details**, attach your IAM role (see Section 4)
+9. Click **Launch instance**
 
+```bash
+aws ec2 run-instances \
+  --image-id ami-0c101f26f147fa7fd \
+  --instance-type t2.micro \
+  --key-name YOUR_KEY_PAIR_NAME \
+  --security-group-ids sg-XXXXXXXX \
+  --subnet-id subnet-XXXXXXXX \
+  --iam-instance-profile Name=EC2-CloudWatch-S3-Role \
+  --block-device-mappings '[{"DeviceName":"/dev/xvda","Ebs":{"VolumeSize":20,"VolumeType":"gp3"}}]' \
+  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=lamp-wordpress-secure}]'
+```
+
+> Replace `ami-0c101f26f147fa7fd` with the correct Amazon Linux 2023 AMI ID for your region. Find the latest at: **EC2 → AMI Catalog → Amazon Linux 2023**.
+
+---
 
 ## 2. Security Group Configuration
 
@@ -41,8 +64,8 @@ Emphasis is placed on **least privilege**, attack surface reduction, and defence
 
 ## 3. Elastic IP
 Assign a static public IP so that your domain DNS record and SSL certificate remain valid if the instance is stopped and restarted.
-'''
-```bash
+```
+bash
 # Allocate an Elastic IP
 aws ec2 allocate-address --domain vpc
 
@@ -224,22 +247,22 @@ fail2ban monitors log files and automatically bans IP addresses that show signs 
 
 ### Install
 
-'''bash
+```bash
 sudo dnf install fail2ban -y
-'''
+```
 ### Configure
 
-'''bash
+```bash
 # Copy the default config to a local override — never edit jail.conf directly
 
 sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
 
 sudo nano /etc/fail2ban/jail.local
-'''
+```
 
 Apply the following settings in 'jail.local':
 
-'''
+```
 ini
 [DEFAULT]
 # Ban duration — 1 hour
@@ -280,10 +303,10 @@ enabled  = true
 
 [apache-overflows]
 enabled  = true
-'''
+```
 ### Enable and Start
 
-'''bash
+```bash
 sudo systemctl enable fail2ban
 sudo systemctl start fail2ban
 
@@ -295,14 +318,14 @@ sudo fail2ban-client status sshd
 
 # View banned IPs
 sudo fail2ban-client status sshd | grep "Banned IP"
-'''
+```
 
 ---
 
 ## 9. UFW Firewall
 UFW provides an OS-level firewall as a second layer of defence behind the AWS Security Group. Even if a Security Group rule is accidentally changed, UFW prevents unwanted traffic from reaching services.
 
-'''bash
+```bash
 # Install UFW
 sudo dnf install ufw -y
 
@@ -330,12 +353,13 @@ Status: active
 |2222/tcp     |    ALLOW IN  |  Anywhere |
 |80/tcp       |    ALLOW IN  |  Anywhere |
 |443/tcp      |    ALLOW IN  |  Anywhere |
+```
 
 **ALTERNATIVE METHOD**
 **Use Host Firewall: firewalld (recommended for AL2023)**
 > **NOTE**: On Amazon Linux 2023, AWS Security Groups provide a network boundary. A host-based firewall adds an extra layer of defense.
 
-'''bash
+```bash
 sudo dnf install firewalld -y
 sudo systemctl enable --now firewalld
 # Add rules
@@ -345,7 +369,8 @@ sudo firewall-cmd --permanent --add-service=https
 sudo firewall-cmd --reload
 
 sudo firewall-cmd --list-all
-'''
+```
+
 **Alternatively, if you prefer simplicity, you can primarily rely on Securoty Groups and skip host firewall for this project**
 
 
@@ -353,7 +378,7 @@ sudo firewall-cmd --list-all
 
 Every running service is a potential attack surface. Audit what is running and disable anything not required.
 
-'''bash
+```bash
 # List all enabled services
 sudo systemctl list-unit-files --state=enabled
 
@@ -368,9 +393,9 @@ sudo systemctl disable --now rpcbind
 sudo systemctl is-active bluetooth avahi-daemon cups
 
 sudo systemctl list-unit-files --state=enabled
-'''
+```
 
-> DO NOT DISABLE **'sshd', 'crond', 'rsyslog', 'amazon-ssm-agent', or 'amazon-cloudwatch-agent'** - These are needed.
+> DO NOT DISABLE **`sshd`, `crond`, `rsyslog`, `amazon-ssm-agent`, or `amazon-cloudwatch-agent`** - These are needed.
 
 ## 11. AWS CloudWatch Agent
 
@@ -378,17 +403,17 @@ The CloudWatch agent collects system metrics and log files that are not availabl
 
 ### Install the Agent
 
-'''bash
+```bash
 sudo dnf install amazon-cloudwatch-agent -y
-'''
+```
 
 ### Configure the Agent
 
 Run the configuration wizard, which generated a JSON config file interactively:
 
-'''bash
+```bash
 sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
-'''
+```
 
 The following are to recommended to be said for the questions asked by the wizard for this project:
 - Operating system: **Linux**
@@ -416,7 +441,7 @@ When prompted to add log files, add:
 
 ### Start the Agent
 
-'''bash
+```bash
 sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
   -a fetch-config \
   -m ec2 \
@@ -429,7 +454,7 @@ sudo systemctl status amazon-cloudwatch-agent
 ### Create CloudWatch Alarms
 Run these AWS CLI commands to create the core alarms. Replace 'YOUR_SNS_ARN' with an SNS topic ARN connected to your email.
 
-'''bash
+```bash
 # High CPU alarm
 aws cloudwatch put-metric-alarm \
   --alarm-name "EC2-HighCPU" \
@@ -456,10 +481,10 @@ aws cloudwatch put-metric-alarm \
   --alarm-actions YOUR_SNS_ARN \
   --dimensions Name=InstanceId,Value=i-XXXXXXXXXXXXXXXX Name=path,Value=/ Name=fstype,Value=xfs
   
-'''
+```
 ### Create a Metric Filter for SSH Failures
 
-'''bash
+```bash
 # Create the metric filter against the /ec2/system/secure log group
 aws logs put-metric-filter \
   --log-group-name "/ec2/system/secure" \
@@ -481,7 +506,7 @@ aws cloudwatch put-metric-alarm \
   --evaluation-periods 1 \
   --alarm-actions YOUR_SNS_ARN
 
-  '''
+  ```
 
   ---
 
@@ -510,7 +535,7 @@ AWS Inspector performs automated vulnerability assessments against the EC2 insta
 
 Run through this checklist after completing all sections above. Every item should be confirmed before moving on to LAMP stack installation.
 
-'''bash
+```bash
 # 1. SSH accessible on port 2222 with key only
 ssh -i YOUR_KEY.pem -p 2222 ec2-user@YOUR_ELASTIC_IP
 
@@ -546,11 +571,11 @@ nmap -p- YOUR_ELASTIC_IP
 # 10. Confirm IMDSv2 is required (hop limit = 2)
 
 **Remember to Cleanup/terminate instance when done**
-'''
+```
 
 ---
  ## References 
-  - [Amazon Linux 2023 Documentation](https://docs.aws.amazon.com/linux/al2023/ug/what-is-amazon-linux.html)
+- [Amazon Linux 2023 Documentation](https://docs.aws.amazon.com/linux/al2023/ug/what-is-amazon-linux.html)
 - [AWS EC2 Security Best Practices](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security.html)
 - [AWS CloudWatch Agent Setup](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Install-CloudWatch-Agent.html)
 - [CIS Amazon Linux 2 Benchmark](https://www.cisecurity.org/benchmark/amazon_linux) *(closest available to AL2023)*
