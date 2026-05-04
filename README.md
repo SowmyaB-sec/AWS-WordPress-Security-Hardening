@@ -90,3 +90,24 @@ A **STRIDE** + OSWAP Top 10** (Web and Cloud) approach was used to identify risk
 | Tool | Purpose |
 |--------------|--------------|
 |AWS EC2 | Compute |
+| Amazon Linux 2023   | Operating System                 |
+| AWS Security Groups, IAM, Inspector | Security Controls |
+| AWS CloudWatch + S3 | Monitoring & Backups             |
+
+### Security Tools 
+| Tool                | Purpose                          |
+|---------------------|----------------------------------|
+| Fail2Ban            | Brute-force protection           |
+| mod_security        | Web Application Firewall         |
+| Wordfence           | WordPress WAF & Security         |
+| WP 2FA              | Multi-factor authentication      |
+| Let's Encrypt       | TLS Certificate Management       |
+
+### Testing Tools 
+| Tool                    | Purpose                          |
+|-------------------------|----------------------------------|
+| Nmap, Nikto             | Reconnaissance & scanning        |
+| Nessus Essentials       | Vulnerability assessment         |
+| WPScan                  | WordPress vulnerability scanning |
+| Wireshark / tcpdump     | Traffic analysis              |
+| SSL Labs, Mozilla Observatory | TLS & Security Headers  |
