@@ -136,6 +136,20 @@ Header always set Content-Security-Policy \
 Timeout 60
 KeepAliveTimeout 5
 MaxKeepAliveRequests 100
+```
 
+```bash
+sudo apachectl configtest && sudo systemctl reload httpd
+```
+---
 
+## mod_security WAF
+Install and enable the OQASP Core Rule Set for web application Protection.
+```bash
+sudo dnf install mod_security mod_security_crs -y
+```
+Enable the module and CRS in a new config file:
+```bash
+sudo nano /etc/httpd/conf.d/modsecurity.conf
+```
 
