@@ -92,4 +92,26 @@ Add:
 */5 * * * * /usr/bin/php /var/www/html/wp-cron.php >/dev/null 2>&1
 ```
 
+---
+
+## 4. File Permission Hardening
+```bash
+sudo chown -R apache:apache /var/www/html
+
+# Directories
+sudo find /var/www/html -type d -exec chmod 755 {} \;
+
+# Files
+sudo find /var/www/html -type f -exec chmod 644 {} \;
+
+# wp-config.php - strictest permissions
+sudo chmod 600 /var/www/html/wp-config.php
+
+# Uploads directory (writable but controlled)
+sudo chmod 755 /var/www/html/wp-content/uploads
+```
+
+---
+
+## 5. .htaccess Hardening
 
