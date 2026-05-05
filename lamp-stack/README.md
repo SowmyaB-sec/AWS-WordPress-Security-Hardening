@@ -143,7 +143,7 @@ sudo apachectl configtest && sudo systemctl reload httpd
 ```
 ---
 
-## mod_security WAF
+## 3. mod_security WAF
 Install and enable the OQASP Core Rule Set for web application Protection.
 ```bash
 sudo dnf install mod_security mod_security_crs -y
