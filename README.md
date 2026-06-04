@@ -18,7 +18,7 @@ Deploying a LAMP + WordPress stack on a public cloud infrastructure introduces a
 - Misconfigurations leading to data exposure.
 - Supply-chain risks from plugins and themes.
 - DDoS and volumetric attacks.
-- Insufficient logginf and slow breach detection.
+- Insufficient logging and slow breach detection.
 
 A **STRIDE** + OSWAP Top 10** (Web and Cloud) approach was used to identify risks and implement layered controls across Network, Compute, Application, Identity, Data, and Observability layers.
 
@@ -48,7 +48,7 @@ A **STRIDE** + OSWAP Top 10** (Web and Cloud) approach was used to identify risk
 2. Provision and harden the EC2 instance ('infrastructure/README.md')
 3. Install and secure the LAMP stack ('lamp-stack/README.md')
 4. Deploy and harden WordPress ('wordpress/README.md')
-5. Set up monitoring and alterting ('monitoring/README.md')
+5. Set up monitoring and altering ('monitoring/README.md')
 6. Run security tests and validation ('testing/README.md')
 
 > **Important:** Only perform security testing on infrastructure you own. Clean up resources after use to avoid unnecessary costs.
@@ -74,7 +74,7 @@ A **STRIDE** + OSWAP Top 10** (Web and Cloud) approach was used to identify risk
 - Hardening 'wp-config.php' (custom table prefix, debug disabled, SSL enforcement).
 - Admin login URL changed + MFA/OTP.
 - Wordfence Security (WAF, firewall, malware scanner) in blocking mode.
-- XML-RPC idsabled, strict file permissions, automatic updates enabled.
+- XML-RPC disabled, strict file permissions, automatic updates enabled.
 - Encrypted daily backups to AWS S3.
   
 ### Monitoring & Alterting
